@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Hermes WebUI</title>
+    <link rel="stylesheet" type="text/css" href="/static/css/element.css"/>
+    <link rel="stylesheet" type="text/css" href="/static/css/metricsgraphics.css"/>
+    <link rel="stylesheet" type="text/css" href="/static/css/hermes.css"/>
+</head>
+<body>
+<div id="app">
+    <el-container v-loading="loading">
+        <el-aside width="240px">
+            <el-menu
+                    id="menu"
+                    :default-active="tab"
+                    @select="handleTab">
+
+                <el-menu-item index="overview">
+                    <i class="el-icon-menu"></i>
+                    <span slot="title">Overview</span>
+                </el-menu-item>
+
+                <el-submenu index="operation">
+                    <template slot="title">
+                        <i class="el-icon-edit-outline"></i>
+                        <span>Operation</span>
+                    </template>
+                    <el-menu-item-group title="raft">
+                        <el-menu-item index="transfer-leadership"><i class="el-icon-refresh"></i>Transfer Leadership</el-menu-item>
+                    </el-menu-item-group>
+                    <el-menu-item-group title="data zone">
+                        <el-menu-item index="add-data-zone"><i class="el-icon-plus"></i>Add Data Zone</el-menu-item>
+                        <el-menu-item index="replay-data-zone"><i class="el-icon-refresh-left"></i>Replay Data Zone</el-menu-item>
+                    </el-menu-item-group>
+                </el-submenu>
+
+                <el-menu-item index="config">
+                    <i class="el-icon-setting"></i>
+                    <span slot="title">Config</span>
+                </el-menu-item>
+            </el-menu>
+        </el-aside>
+        <el-container>
+            <template v-if="tab=='overview'">
+                <el-header>
+                    <h1>Hermes Overview</h1>
+                </el-header>
+                <el-main>
+                    <template v-if="metazone.length>0">
+                        <el-row>
+                            <el-col>
+                                <i class="el-icon-chat-dot-round"></i>
+                                <el-tag size="mini" effect="plain" type="info">Online</el-tag>
+                                <el-tag size="mini" effect="plain" type="danger">Offline</el-tag>
+                            </el-col>
+                        </el-row>
+                        <el-row>
+                            <el-col>
+                                <h2>Meta Zone</h2>
+                            </el-col>
+                        </el-row>
+                        <el-row>
+                            <el-col>
+                                <el-table :data="metazone"
+                                          :row-class-name="isDead"
+                                          :default-sort="{prop:'NodeID'}">
+                                    <el-table-column prop="ZoneID" label="ZoneID"></el-table-column>
+                                    <el-table-column prop="NodeID" label="NodeID"></el-table-column>
+                                    <el-table-column prop="PodID" label="PodID"></el-table-column>
+                                    <el-table-column prop="IsLeader" label="IsLeader"></el-table-column>
+                                    <el-table-column prop="HeartbeatStr" label="Heartbeat"></el-table-column>
+                                </el-table>
+                            </el-col>
+                        </el-row>
+                        <el-row>
+                            <el-col>
+                                <h2>Data Zones</h2>
+                            </el-col>
+                        </el-row>
+
+                        <template v-for="(v,k,i) in datazones">
+                            <h3>ZoneID : {{k}}</h3>
+
+                            <el-row>
+                                <el-col>
+                                    <el-table :data="v"
+                                              :row-class-name="isDead"
+                                              :default-sort="{prop:'NodeID'}">
+                                        <el-table-column prop="ZoneID" label="ZoneID"></el-table-column>
+                                        <el-table-column prop="NodeID" label="NodeID"></el-table-column>
+                                        <el-table-column prop="PodID" label="PodID"></el-table-column>
+                                        <el-table-column prop="IsLeader" label="IsLeader"></el-table-column>
+                                        <el-table-column prop="Deleted" label="Deleted[Index]"></el-table-column>
+                                        <el-table-column prop="Persisted" label="Persisted[Index]"></el-table-column>
+                                        <el-table-column prop="Cached" label="Cached[Index]"></el-table-column>
+                                        <el-table-column prop="Fresh" label="Fresh[Index]"></el-table-column>
+                                        <el-table-column prop="HeartbeatStr" label="Heartbeat"></el-table-column>
+                                    </el-table>
+                                </el-col>
+                            </el-row>
+
+                            <el-row>
+                                <el-col>
+                                    <el-card class="metrics-card">
+                                        <el-collapse v-model="metrics_collapse[k]">
+                                            <el-collapse-item :name="k.toString()">
+                                                <template slot="title">
+                                                    <b><i style="font-size:20px" class="el-icon-s-marketing"></i>Metrics</b>
+                                                </template>
+                                                <el-row v-if="metricsV(k)">
+                                                    <el-col class="metrics" :xs="24" :sm="24" :md="24" :lg="8" :xl="8">
+                                                        <div :id="'metric-acc-'+k.toString()"></div>
+                                                        <div :id="'legend-acc-'+k.toString()"></div>
+                                                    </el-col>
+                                                    <el-col class="metrics" :xs="24" :sm="24" :md="24" :lg="8" :xl="8">
+                                                        <div :id="'metric-index-'+k.toString()"></div>
+                                                        <div :id="'legend-index-'+k.toString()"></div>
+                                                    </el-col>
+                                                    <el-col class="metrics" :xs="24" :sm="24" :md="24" :lg="8" :xl="8">
+                                                        <div :id="'metric-size-'+k.toString()"></div>
+                                                        <div :id="'legend-size-'+k.toString()"></div>
+                                                    </el-col>
+                                                </el-row>
+                                            </el-collapse-item>
+                                        </el-collapse>
+                                    </el-card>
+
+                                </el-col>
+                            </el-row>
+
+                        </template>
+
+                    </template>
+                    <template v-else>
+                        <el-row>
+                            <el-col>
+                                <h2>Hermes probably not initialized yet.</h2>
+                            </el-col>
+                        </el-row>
+                        <el-row>
+                            <el-col>
+                                <el-button type="primary" @click="initHermes">Initialize Now</el-button>
+                            </el-col>
+                        </el-row>
+                    </template>
+                </el-main>
+            </template>
+
+            <template v-if="tab=='config'">
+                <el-header>
+                    <h1>Hermes Config</h1>
+                </el-header>
+                <el-main>
+                    <el-row>
+                        <el-col>
+                            <el-table :data="config">
+                                <el-table-column prop="key" label="Key"></el-table-column>
+                                <el-table-column prop="val" label="Value"></el-table-column>
+                            </el-table>
+                        </el-col>
+                    </el-row>
+                </el-main>
+            </template>
+            <template v-if="tab=='transfer-leadership'">
+                <el-header>
+                    <h1>Transfer Leadership</h1>
+                </el-header>
+                <el-main>
+                    <el-row>
+                        <el-col>
+                            <el-card class="form-cmd">
+                                <el-form ref="tl" :model="tl" label-width="140px" :rules="tlRules">
+                                    <el-form-item prop="ZoneID" label="Zone ID">
+                                        <el-select v-model.number="tl.ZoneID" class="input-id" placeholder="Please select a zone">
+                                            <el-option v-for="zid in zoneIDs()" :label="zid" :value="zid"></el-option>
+                                        </el-select>
+                                    </el-form-item>
+                                    <el-form-item v-if="tl.ZoneID!==null" label="Node ID">
+                                        <el-select v-model.number="tl.NodeID" class="input-id" placeholder="Please select a node">
+                                            <el-option v-for="nid in nodeIDs(tl.ZoneID)" :label="nid" :value="nid"></el-option>
+                                        </el-select>
+                                    </el-form-item>
+                                    <el-form-item>
+                                        <el-button type="primary" @click="submitTL">Submit</el-button>
+                                    </el-form-item>
+                                </el-form>
+                            </el-card>
+                        </el-col>
+                    </el-row>
+                </el-main>
+            </template>
+            <template v-if="tab=='add-data-zone'">
+                <el-header>
+                    <h1>Add Data Zone</h1>
+                </el-header>
+                <el-main>
+                    <el-row>
+                        <el-col>
+                            <el-card class="form-cmd">
+                                <el-form ref="adz" :model="adz" label-width="140px" :rules="adzRules">
+                                    <el-form-item prop="ZoneID" label="Zone ID">
+                                        <el-input v-model.number="adz.ZoneID" class="input-id" placeholder="Please input zone id"></el-input>
+                                    </el-form-item>
+                                    <el-form-item prop="RC" label="Replication Count">
+                                        <el-input v-model.number="adz.RC" class="input-id" :disabled="true"></el-input>
+                                    </el-form-item>
+                                    <el-form-item
+                                            v-for="(node,index) in adz.Nodes"
+                                            :label="'Node '+(index+1)"
+                                            :key="node.key"
+                                            :prop="'Nodes.'+index"
+                                            :rules="[{validator: validateNode, trigger: 'change'}]"
+                                    >
+                                        <el-input v-model.number="node.NodeID" :inline="true" class="input-id-half" placeholder="NodeID"></el-input>
+                                        <el-select v-model.number="node.PodID" :inline="true" class="input-id-half" placeholder="PodID">
+                                            <el-option v-for="pid in podIDs()" :label="pid" :value="pid"></el-option>
+                                        </el-select>
+                                        <el-button @click.prevent="adzDeleteNode(index)">Delete</el-button>
+                                    </el-form-item>
+
+                                    <el-form-item>
+                                        <el-button type="primary" @click="submitADZ">Submit</el-button>
+                                        <el-button @click="adzMoreNode">More Node</el-button>
+                                    </el-form-item>
+                                </el-form>
+                            </el-card>
+                        </el-col>
+                    </el-row>
+                </el-main>
+            </template>
+            <template v-if="tab=='replay-data-zone'">
+                <el-header>
+                    <h1>Replay Data Zone</h1>
+                </el-header>
+                <el-main>
+                    <el-row>
+                        <el-col>
+                            <el-card class="form-cmd">
+                                <el-form ref="rdz" :model="rdz" label-width="140px" :rules="rdzRules">
+                                    <el-form-item prop="ZoneID" label="Zone ID">
+                                        <el-select v-model.number="rdz.ZoneID" class="input-id" placeholder="Please select a zone">
+                                            <el-option v-for="zid in dataZoneIDs()" :label="zid" :value="zid"></el-option>
+                                        </el-select>
+                                    </el-form-item>
+                                    <el-form-item prop="Index" label="Index">
+                                        <el-input v-model.number="rdz.Index" class="input-id" placeholder="Please input Index"></el-input>
+                                    </el-form-item>
+                                    <el-form-item>
+                                        <el-button type="primary" @click="submitRDZ">Submit</el-button>
+                                    </el-form-item>
+                                </el-form>
+                            </el-card>
+                        </el-col>
+                    </el-row>
+                </el-main>
+            </template>
+        </el-container>
+    </el-container>
+</div>
+<script src="/static/js/vue.js"></script>
+<script src="/static/js/vue-resource.js"></script>
+<script src="/static/js/element.js"></script>
+<script src="/static/js/axios.js"></script>
+<script src="/static/js/jquery.min.js"></script>
+<script src="/static/js/d3.v4.min.js"></script>
+<script src="/static/js/metricsgraphics.min.js"></script>
+<script src="/static/js/hermes.js"></script>
+</body>
+</html>

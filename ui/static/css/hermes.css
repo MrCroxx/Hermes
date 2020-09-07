@@ -1,0 +1,49 @@
+h1 {
+    font-size: 30px;
+}
+
+
+.el-table .info-row {
+    background: #E9E9EB;
+}
+
+.el-table .success-row {
+    background: #E1F3D8;
+}
+
+.el-table .warning-row {
+    background: #FAECD8;
+}
+
+.el-table .danger-row {
+    background: #FDE2E2;
+}
+
+.form-cmd {
+    width: 520px;
+}
+
+.input-id {
+    width: 220px;
+}
+
+.input-id-half {
+    width: 110px;
+}
+
+.metrics {
+    text-align: center;
+}
+
+.metrics-card .el-collapse {
+    border-top: 0;
+    border-bottom: 0;
+}
+
+.metrics-card .el-collapse-item__header {
+    border-bottom: 0;
+}
+
+.metrics-card .el-collapse-item__wrap {
+    border-bottom: 0;
+}
